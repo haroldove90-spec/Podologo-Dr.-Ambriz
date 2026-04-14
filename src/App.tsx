@@ -20,13 +20,13 @@ import {
 import { auth, signIn, logout, db } from '@/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, query, onSnapshot, orderBy, limit, where } from 'firebase/firestore';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Toaster } from '@/components/ui/sonner';
+import { Button } from './components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
+import { Badge } from './components/ui/badge';
+import { ScrollArea } from './components/ui/scroll-area';
+import { Avatar, AvatarFallback, AvatarImage } from './components/ui/avatar';
+import { Toaster } from './components/ui/sonner';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -69,17 +69,19 @@ import {
   DialogTitle, 
   DialogTrigger,
   DialogFooter
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+} from './components/ui/dialog';
+import { Input } from './components/ui/input';
+import { Label } from './components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
 import { addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import DiabeticFootEvaluation from '@/components/DiabeticFootEvaluation';
 import SterilizationModule from '@/components/SterilizationModule';
+import BiomechanicsModule from '@/components/BiomechanicsModule';
 import { Download } from 'lucide-react';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
+  const [isGuest, setIsGuest] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -135,15 +137,17 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-      if (user) {
-        toast.success(`Bienvenido, ${user.displayName}`);
-        seedData(); // Seed data if empty
+      if (!isGuest) {
+        setUser(user);
+        if (user) {
+          toast.success(`Bienvenido, ${user.displayName}`);
+          seedData(); // Seed data if empty
+        }
       }
+      setLoading(false);
     });
     return () => unsubscribe();
-  }, []);
+  }, [isGuest]);
 
   useEffect(() => {
     if (!user) return;
@@ -188,14 +192,20 @@ export default function App() {
             </div>
           </div>
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Podología Pro</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Podólogo Dr. Ambríz</h1>
             <p className="text-slate-500">Gestión clínica especializada y cumplimiento NOM-024</p>
           </div>
-          <Button onClick={signIn} className="w-full h-12 text-lg rounded-xl shadow-lg shadow-primary/20 transition-all hover:scale-[1.02]">
-            Iniciar Sesión con Google
+          <Button 
+            onClick={() => {
+              setIsGuest(true);
+              setUser({ uid: 'demo-user', email: 'demo@podologia.com', displayName: 'Dr. Ambríz' } as any);
+            }} 
+            className="w-full h-12 text-lg rounded-xl shadow-lg shadow-primary/20 transition-all hover:scale-[1.02]"
+          >
+            Acceder al Dashboard
           </Button>
           <p className="text-xs text-slate-400">
-            Al iniciar sesión, aceptas los términos de uso y privacidad clínica.
+            Modo demostración sin credenciales.
           </p>
         </motion.div>
       </div>
@@ -219,7 +229,7 @@ export default function App() {
       <header className="md:hidden bg-white/45 backdrop-blur-md border-b border-white/60 p-4 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-2">
           <Activity className="h-6 w-6 text-primary" />
-          <span className="font-bold text-lg">Podología Pro</span>
+          <span className="font-bold text-lg">Podólogo Dr. Ambríz</span>
         </div>
         <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
           {isSidebarOpen ? <X /> : <Menu />}
@@ -237,7 +247,7 @@ export default function App() {
             <div className="p-2 bg-primary/10 rounded-lg">
               <Activity className="h-6 w-6 text-primary" />
             </div>
-            <span className="font-bold text-xl tracking-tight">Podología Pro</span>
+            <span className="font-bold text-xl tracking-tight">Podólogo Dr. Ambríz</span>
           </div>
 
           <nav className="flex-1 space-y-1">
@@ -362,6 +372,7 @@ export default function App() {
                   {activeTab === 'dashboard' && <DashboardView patients={patients} biosecurity={biosecurityLogs} onSelectPatient={setSelectedPatient} />}
                   {activeTab === 'patients' && <PatientsView patients={patients} onSelectPatient={setSelectedPatient} />}
                   {activeTab === 'biosecurity' && <SterilizationModule />}
+                  {activeTab === 'biomechanics' && <BiomechanicsModule />}
                 </>
               )}
             </motion.div>
