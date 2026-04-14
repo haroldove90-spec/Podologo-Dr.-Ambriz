@@ -80,6 +80,13 @@ service cloud.firestore {
         allow update: if isAuthenticated();
         allow delete: if isAdmin();
       }
+
+      match /diabetic_evaluations/{evalId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated();
+        allow update: if isAuthenticated();
+        allow delete: if isAdmin();
+      }
     }
 
     match /biosecurity/{cycleId} {

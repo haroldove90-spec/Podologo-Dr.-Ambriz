@@ -71,6 +71,20 @@
         "notes": { "type": "string" }
       },
       "required": ["patientId", "url", "category", "date"]
+    },
+    "DiabeticEvaluation": {
+      "title": "DiabeticEvaluation",
+      "description": "Diabetic foot evaluation including vascular and neurological tests.",
+      "type": "object",
+      "properties": {
+        "vascular": { "type": "object", "description": "Pulses evaluation" },
+        "sensibility": { "type": "object", "description": "Monofilament test results (JSON points)" },
+        "wagnerGrade": { "type": "integer", "description": "Wagner Scale Grade (0-5)" },
+        "riskLevel": { "type": "string", "description": "Calculated risk level" },
+        "notes": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" }
+      },
+      "required": ["wagnerGrade", "riskLevel", "date"]
     }
   },
   "firestore": {
@@ -89,6 +103,10 @@
     "/patients/{patientId}/biomechanics/{biomechanicsId}": {
       "schema": "Biomechanics",
       "description": "Subcollection of biomechanical studies"
+    },
+    "/patients/{patientId}/diabetic_evaluations/{evalId}": {
+      "schema": "DiabeticEvaluation",
+      "description": "Subcollection of diabetic foot evaluations"
     },
     "/biosecurity/{cycleId}": {
       "schema": "Biosecurity",

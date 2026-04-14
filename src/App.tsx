@@ -74,6 +74,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import DiabeticFootEvaluation from '@/components/DiabeticFootEvaluation';
+import SterilizationModule from '@/components/SterilizationModule';
+import { Download } from 'lucide-react';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -88,6 +91,24 @@ export default function App() {
 
   // Form states
   const [isNewPatientOpen, setIsNewPatientOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    });
+  }, []);
+
+  const handleInstall = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    }
+  };
   const [newPatient, setNewPatient] = useState({
     fullName: '',
     birthDate: '',
@@ -272,8 +293,14 @@ export default function App() {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              {deferredPrompt && (
+                <Button variant="outline" onClick={handleInstall} className="rounded-xl glass border-primary/30 text-primary">
+                  <Download className="h-4 w-4 mr-2" />
+                  Instalar App
+                </Button>
+              )}
               <Dialog open={isNewPatientOpen} onOpenChange={setIsNewPatientOpen}>
-                <DialogTrigger asChild>
+                <DialogTrigger>
                   <Button className="rounded-xl shadow-md">
                     <Plus className="h-5 w-5 mr-2" />
                     Nuevo Paciente
@@ -334,7 +361,7 @@ export default function App() {
                 <>
                   {activeTab === 'dashboard' && <DashboardView patients={patients} biosecurity={biosecurityLogs} onSelectPatient={setSelectedPatient} />}
                   {activeTab === 'patients' && <PatientsView patients={patients} onSelectPatient={setSelectedPatient} />}
-                  {activeTab === 'biosecurity' && <BiosecurityView logs={biosecurityLogs} />}
+                  {activeTab === 'biosecurity' && <SterilizationModule />}
                 </>
               )}
             </motion.div>
@@ -628,6 +655,7 @@ function PatientDetailView({ patient, onBack }: { patient: Patient, onBack: () =
       <Tabs defaultValue="history" className="w-full">
         <TabsList className="bg-white/45 backdrop-blur-md p-1 rounded-2xl border border-white/60 mb-6">
           <TabsTrigger value="history" className="rounded-xl px-6 data-[state=active]:glass">Historial Clínico</TabsTrigger>
+          <TabsTrigger value="diabetic" className="rounded-xl px-6 data-[state=active]:glass">Pie Diabético</TabsTrigger>
           <TabsTrigger value="biomechanics" className="rounded-xl px-6 data-[state=active]:glass">Biomecánica</TabsTrigger>
           <TabsTrigger value="gallery" className="rounded-xl px-6 data-[state=active]:glass">Galería</TabsTrigger>
         </TabsList>
@@ -636,7 +664,7 @@ function PatientDetailView({ patient, onBack }: { patient: Patient, onBack: () =
           <div className="flex justify-between items-center">
             <h4 className="text-lg font-bold">Consultas Recientes</h4>
             <Dialog open={isConsultationOpen} onOpenChange={setIsConsultationOpen}>
-              <DialogTrigger asChild>
+              <DialogTrigger>
                 <Button className="rounded-xl">
                   <Plus className="h-5 w-5 mr-2" />
                   Nueva Consulta (SOAP)
@@ -726,6 +754,10 @@ function PatientDetailView({ patient, onBack }: { patient: Patient, onBack: () =
           </div>
         </TabsContent>
 
+        <TabsContent value="diabetic" className="space-y-6">
+          <DiabeticFootEvaluation patientId={patient.id} />
+        </TabsContent>
+
         <TabsContent value="biomechanics">
           <Card className="glass-card p-8 text-center">
             <Activity className="h-12 w-12 text-blue-500 mx-auto mb-4" />
@@ -748,104 +780,3 @@ function PatientDetailView({ patient, onBack }: { patient: Patient, onBack: () =
   );
 }
 
-function BiosecurityView({ logs }: { logs: BiosecurityCycle[] }) {
-  const [isNewCycleOpen, setIsNewCycleOpen] = useState(false);
-  const [newCycle, setNewCycle] = useState({ cycleId: '', operator: '', materialBatch: '', status: 'Success' as const, notes: '' });
-
-  const handleAddCycle = async () => {
-    try {
-      await addDoc(collection(db, 'biosecurity'), {
-        ...newCycle,
-        date: serverTimestamp()
-      });
-      setIsNewCycleOpen(false);
-      toast.success('Ciclo de esterilización registrado');
-      setNewCycle({ cycleId: '', operator: '', materialBatch: '', status: 'Success', notes: '' });
-    } catch (error) {
-      toast.error('Error al registrar ciclo');
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-xl font-bold text-slate-900">Trazabilidad de Esterilización</h3>
-        <Dialog open={isNewCycleOpen} onOpenChange={setIsNewCycleOpen}>
-          <DialogTrigger asChild>
-            <Button className="rounded-xl">
-              <Plus className="h-5 w-5 mr-2" />
-              Registrar Ciclo
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] glass-card border-white/60">
-            <DialogHeader>
-              <DialogTitle>Nuevo Ciclo de Autoclave</DialogTitle>
-              <DialogDescription>Registra la trazabilidad del material estéril.</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label>ID de Ciclo</Label>
-                <Input value={newCycle.cycleId} onChange={(e) => setNewCycle({...newCycle, cycleId: e.target.value})} placeholder="Ej. 2024-005" />
-              </div>
-              <div className="grid gap-2">
-                <Label>Operador Responsable</Label>
-                <Input value={newCycle.operator} onChange={(e) => setNewCycle({...newCycle, operator: e.target.value})} placeholder="Nombre del podólogo/asistente" />
-              </div>
-              <div className="grid gap-2">
-                <Label>Lote de Material</Label>
-                <Input value={newCycle.materialBatch} onChange={(e) => setNewCycle({...newCycle, materialBatch: e.target.value})} placeholder="Ej. LOT-1234" />
-              </div>
-              <div className="grid gap-2">
-                <Label>Estado del Ciclo</Label>
-                <Select value={newCycle.status} onValueChange={(v: any) => setNewCycle({...newCycle, status: v})}>
-                  <SelectTrigger className="rounded-xl">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Success">Éxito (Parámetros OK)</SelectItem>
-                    <SelectItem value="Failure">Falla (Revisar Autoclave)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button onClick={handleAddCycle} className="w-full rounded-xl">Guardar Registro</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-      <div className="grid grid-cols-1 gap-4">
-        {logs.map((log) => (
-          <Card key={log.id} className="glass-card">
-            <CardContent className="p-6 flex items-center justify-between">
-              <div className="flex items-center gap-6">
-                <div className={`p-3 glass rounded-2xl ${log.status === 'Success' ? 'text-green-600' : 'text-red-600'}`}>
-                  <ShieldCheck className="h-8 w-8" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-bold text-lg">Ciclo #{log.cycleId}</h4>
-                    <Badge variant={log.status === 'Success' ? 'outline' : 'destructive'} className="rounded-lg">
-                      {log.status === 'Success' ? 'EXITOSO' : 'FALLIDO'}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-slate-500">
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {log.date?.seconds ? new Date(log.date.seconds * 1000).toLocaleString() : 'Reciente'}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <UserIcon className="h-4 w-4" />
-                      Operador: {log.operator}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <Button variant="outline" className="rounded-xl">Ver Detalles</Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-}

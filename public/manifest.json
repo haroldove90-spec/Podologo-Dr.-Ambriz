@@ -1,0 +1,21 @@
+{
+  "name": "Podología Pro",
+  "short_name": "Podología",
+  "description": "Gestión clínica especializada para podólogos",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#cfdef3",
+  "theme_color": "#2c3e50",
+  "icons": [
+    {
+      "src": "https://picsum.photos/seed/podology/192/192",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://picsum.photos/seed/podology/512/512",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
