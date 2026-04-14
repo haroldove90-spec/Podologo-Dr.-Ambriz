@@ -20,13 +20,13 @@ import {
 import { auth, signIn, logout, db } from '@/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, query, onSnapshot, orderBy, limit, where } from 'firebase/firestore';
-import { Button } from './components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
-import { Badge } from './components/ui/badge';
-import { ScrollArea } from './components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from './components/ui/avatar';
-import { Toaster } from './components/ui/sonner';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -69,14 +69,16 @@ import {
   DialogTitle, 
   DialogTrigger,
   DialogFooter
-} from './components/ui/dialog';
-import { Input } from './components/ui/input';
-import { Label } from './components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import DiabeticFootEvaluation from '@/components/DiabeticFootEvaluation';
 import SterilizationModule from '@/components/SterilizationModule';
 import BiomechanicsModule from '@/components/BiomechanicsModule';
+import ClinicalGallery from '@/components/ClinicalGallery';
+import ProductivityDashboard from '@/components/ProductivityDashboard';
 import { Download } from 'lucide-react';
 
 export default function App() {
@@ -193,7 +195,9 @@ export default function App() {
           </div>
           <div className="space-y-2">
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">Podólogo Dr. Ambríz</h1>
-            <p className="text-slate-500">Gestión clínica especializada y cumplimiento NOM-024</p>
+            <p className="text-slate-500">
+              Gestión clínica especializada y cumplimiento <br /> NOM-<br />024
+            </p>
           </div>
           <Button 
             onClick={() => {
@@ -215,9 +219,8 @@ export default function App() {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'patients', label: 'Pacientes', icon: Users },
-    { id: 'consultations', label: 'Consultas', icon: Calendar },
-    { id: 'biosecurity', label: 'Bioseguridad', icon: ShieldCheck },
     { id: 'biomechanics', label: 'Biomecánica', icon: Activity },
+    { id: 'biosecurity', label: 'Bioseguridad', icon: ShieldCheck },
     { id: 'gallery', label: 'Galería', icon: ImageIcon },
   ];
 
@@ -369,10 +372,11 @@ export default function App() {
                 <PatientDetailView patient={selectedPatient} onBack={() => setSelectedPatient(null)} />
               ) : (
                 <>
-                  {activeTab === 'dashboard' && <DashboardView patients={patients} biosecurity={biosecurityLogs} onSelectPatient={setSelectedPatient} />}
+                  {activeTab === 'dashboard' && <ProductivityDashboard />}
                   {activeTab === 'patients' && <PatientsView patients={patients} onSelectPatient={setSelectedPatient} />}
                   {activeTab === 'biosecurity' && <SterilizationModule />}
                   {activeTab === 'biomechanics' && <BiomechanicsModule />}
+                  {activeTab === 'gallery' && <ClinicalGallery />}
                 </>
               )}
             </motion.div>
@@ -779,12 +783,7 @@ function PatientDetailView({ patient, onBack }: { patient: Patient, onBack: () =
         </TabsContent>
 
         <TabsContent value="gallery">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="aspect-square rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors">
-              <Plus className="h-8 w-8 text-slate-300 mb-2" />
-              <span className="text-xs font-bold text-slate-400 uppercase">Añadir Foto</span>
-            </div>
-          </div>
+          <ClinicalGallery patientId={patient.id} />
         </TabsContent>
       </Tabs>
     </div>
