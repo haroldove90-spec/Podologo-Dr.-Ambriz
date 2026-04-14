@@ -1,0 +1,6 @@
+{
+  "name": "Podología Pro",
+  "description": "Dashboard integral para consultorios de podología con cumplimiento de NOM-024, gestión de pacientes, biomecánica y bioseguridad.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": []
+}

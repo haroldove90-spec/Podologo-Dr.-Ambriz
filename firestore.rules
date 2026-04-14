@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: patients
+    // Fields: fullName (string), birthDate (string), isDiabetic (bool), isMinor (bool), phone (string), email (string), createdAt (timestamp), updatedAt (timestamp)
+    //
+    // Collection: biosecurity
+    // Fields: cycleId (string), date (timestamp), operator (string), materialBatch (string), status (string), notes (string)
+    //
+    // Subcollection: consultations (under patients)
+    // Fields: patientId (string), date (timestamp), subjective (string), objective (string), assessment (string), plan (string), type (string)
+    //
+    // Subcollection: photos (under patients)
+    // Fields: patientId (string), url (string), category (string), date (timestamp), notes (string)
+    //
+    // Subcollection: biomechanics (under patients)
+    // Fields: patientId (string), consultationId (string), gaitAngles (map), footType (string), prescription (string), material (string)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (request.auth.token.email == "haroldove90@gmail.com" && request.auth.token.email_verified == true);
+    }
+
+    function isValidPatient(data) {
+      return data.fullName is string && data.fullName.size() > 0 && data.fullName.size() < 100 &&
+             data.birthDate is string &&
+             data.isDiabetic is bool &&
+             data.isMinor is bool;
+    }
+
+    function isValidConsultation(data) {
+      return data.patientId is string &&
+             data.subjective is string && data.subjective.size() < 5000 &&
+             data.objective is string && data.objective.size() < 5000 &&
+             data.assessment is string && data.assessment.size() < 5000 &&
+             data.plan is string && data.plan.size() < 5000;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /patients/{patientId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidPatient(request.resource.data);
+      allow update: if isAuthenticated() && isValidPatient(request.resource.data);
+      allow delete: if isAdmin();
+
+      match /consultations/{consultationId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated() && isValidConsultation(request.resource.data);
+        allow update: if isAuthenticated() && isValidConsultation(request.resource.data);
+        allow delete: if isAdmin();
+      }
+
+      match /photos/{photoId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated();
+        allow update: if isAuthenticated();
+        allow delete: if isAdmin();
+      }
+
+      match /biomechanics/{studyId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated();
+        allow update: if isAuthenticated();
+        allow delete: if isAdmin();
+      }
+    }
+
+    match /biosecurity/{cycleId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+    }
+  }
+}

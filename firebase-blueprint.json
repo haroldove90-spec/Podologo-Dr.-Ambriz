@@ -1,0 +1,98 @@
+{
+  "entities": {
+    "Patient": {
+      "title": "Patient",
+      "description": "Patient record containing personal and medical flags.",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string", "description": "Full name of the patient" },
+        "birthDate": { "type": "string", "format": "date", "description": "Date of birth" },
+        "isDiabetic": { "type": "boolean", "description": "Flag for diabetic patients" },
+        "isMinor": { "type": "boolean", "description": "Flag for patients under 18" },
+        "phone": { "type": "string", "description": "Contact phone number" },
+        "email": { "type": "string", "format": "email", "description": "Contact email" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fullName", "birthDate"]
+    },
+    "Consultation": {
+      "title": "Consultation",
+      "description": "Clinical consultation record following NOM-004 (SOAP format).",
+      "type": "object",
+      "properties": {
+        "patientId": { "type": "string", "description": "Reference to the patient" },
+        "date": { "type": "string", "format": "date-time" },
+        "subjective": { "type": "string", "description": "S: Patient's symptoms and history" },
+        "objective": { "type": "string", "description": "O: Clinical findings and observations" },
+        "assessment": { "type": "string", "description": "A: Diagnosis or clinical impression" },
+        "plan": { "type": "string", "description": "P: Treatment plan and follow-up" },
+        "type": { "type": "string", "enum": ["General", "Diabetic Foot", "Pediatric", "Orthotics"], "description": "Type of consultation" }
+      },
+      "required": ["patientId", "date", "subjective", "objective", "assessment", "plan"]
+    },
+    "Biosecurity": {
+      "title": "Biosecurity",
+      "description": "Traceability of sterilization cycles and material batches.",
+      "type": "object",
+      "properties": {
+        "cycleId": { "type": "string", "description": "Autoclave cycle identifier" },
+        "date": { "type": "string", "format": "date-time" },
+        "operator": { "type": "string", "description": "Person responsible for the cycle" },
+        "materialBatch": { "type": "string", "description": "Batch number of the material" },
+        "status": { "type": "string", "enum": ["Success", "Failure"], "description": "Result of the sterilization cycle" },
+        "notes": { "type": "string" }
+      },
+      "required": ["cycleId", "date", "operator", "materialBatch", "status"]
+    },
+    "Biomechanics": {
+      "title": "Biomechanics",
+      "description": "Gait analysis and orthotics prescription data.",
+      "type": "object",
+      "properties": {
+        "patientId": { "type": "string" },
+        "consultationId": { "type": "string" },
+        "gaitAngles": { "type": "object", "description": "Measured gait angles (e.g., pronation, supination)" },
+        "footType": { "type": "string", "enum": ["Flat", "Normal", "Cavus"] },
+        "prescription": { "type": "string", "description": "Details for orthotic insoles" },
+        "material": { "type": "string", "description": "Material used for insoles" }
+      },
+      "required": ["patientId", "consultationId"]
+    },
+    "ClinicalPhoto": {
+      "title": "ClinicalPhoto",
+      "description": "Patient evolution photos with metadata.",
+      "type": "object",
+      "properties": {
+        "patientId": { "type": "string" },
+        "url": { "type": "string", "description": "Storage URL of the image" },
+        "category": { "type": "string", "enum": ["Pre-treatment", "Post-operative", "Evolution", "Final"], "description": "Category of the photo" },
+        "date": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" }
+      },
+      "required": ["patientId", "url", "category", "date"]
+    }
+  },
+  "firestore": {
+    "/patients/{patientId}": {
+      "schema": "Patient",
+      "description": "Collection of patient records"
+    },
+    "/patients/{patientId}/consultations/{consultationId}": {
+      "schema": "Consultation",
+      "description": "Subcollection of clinical consultations for a patient"
+    },
+    "/patients/{patientId}/photos/{photoId}": {
+      "schema": "ClinicalPhoto",
+      "description": "Subcollection of clinical evolution photos"
+    },
+    "/patients/{patientId}/biomechanics/{biomechanicsId}": {
+      "schema": "Biomechanics",
+      "description": "Subcollection of biomechanical studies"
+    },
+    "/biosecurity/{cycleId}": {
+      "schema": "Biosecurity",
+      "description": "Collection of sterilization cycle logs"
+    }
+  }
+}
